@@ -8,6 +8,7 @@ swagger_config = {
 }
 swagger = Swagger(
     app,
+
     config=swagger_config,
 )
 
