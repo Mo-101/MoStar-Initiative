@@ -1,0 +1,57 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Mo-Star AI API",
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+  "schemes": ["http"],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict": {
+      "post": {
+        "summary": "Generate a placeholder AI response",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prompt": {"type": "string"}
+              },
+              "required": ["prompt"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "response": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
