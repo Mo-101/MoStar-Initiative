@@ -1,1 +1,1 @@
-# MoStar-Initiateive
+# MoStar-Initiative
