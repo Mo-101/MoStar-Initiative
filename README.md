@@ -3,21 +3,20 @@
 ## API Server
 
 A simple Flask server is provided under the `api/` directory. It uses the
-`MoStarIndustries-api-1.0.0-swagger.json` specification to define
+
 available endpoints and exposes interactive documentation.
 
 ### Setup
 
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
+
 pip install -r requirements.txt
 python api/app.py
 ```
 
 The server runs on `http://localhost:5000` with Swagger UI available at
 `http://localhost:5000/docs`.
+
 
 If package installation fails, manually install the dependencies:
 
