@@ -8,7 +8,6 @@ swagger_config = {
 }
 swagger = Swagger(
     app,
-    template_file="AkanimoIniobong-mo-star_ai_api-1.0.0-swagger.json",
     config=swagger_config,
 )
 
@@ -25,7 +24,5 @@ def predict():
     prompt = data.get("prompt", "")
     response_text = prompt[::-1]
     return jsonify({"response": response_text})
-
-
 if __name__ == "__main__":
     app.run(port=5000)
