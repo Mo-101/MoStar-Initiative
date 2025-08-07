@@ -1,0 +1,86 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "MoStar Industries API",
+    "description": "Core API specification for MoStar's federated intelligence and smart systems.",
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict": {
+      "post": {
+        "summary": "Generate a placeholder AI response",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "prompt"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "response": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/climate": {
+      "get": {
+        "summary": "Demo climate anomaly prediction",
+        "responses": {
+          "200": {
+            "description": "Sample anomaly prediction",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prediction": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
