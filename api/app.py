@@ -40,6 +40,16 @@ def demo_climate():
 @app.route("/create-checkout-session", methods=["POST"])
 def create_checkout_session():
     """Create Stripe Checkout session for purchasing credits."""
+    # Map available tiers to Stripe unit amounts (in cents)
+    tier_prices = {
+        "starter": 499,
+        "standard": 999,
+        "pro": 1999,
+    }
+    data = request.get_json() or {}
+    tier = data.get("tier", "starter")
+    amount = tier_prices.get(tier, tier_prices["starter"])
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -47,7 +57,7 @@ def create_checkout_session():
                 "price_data": {
                     "currency": "usd",
                     "product_data": {"name": "MoStar API Access"},
-                    "unit_amount": 500,
+                    "unit_amount": amount,
                 },
                 "quantity": 1,
             }],

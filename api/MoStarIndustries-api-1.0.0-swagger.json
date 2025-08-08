@@ -85,6 +85,21 @@
     "/create-checkout-session": {
       "post": {
         "summary": "Create Stripe Checkout session",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tier": {
+                  "type": "string",
+                  "enum": ["starter", "standard", "pro"]
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Checkout session created",
