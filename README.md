@@ -3,7 +3,9 @@
 ## API Server
 
 A simple Flask server is provided under the `api/` directory. It uses the
+
 `MoStarIndustries-api-1.0.0-swagger.json` specification to define
+
 available endpoints and exposes interactive documentation.
 
 ### Setup
@@ -12,6 +14,11 @@ available endpoints and exposes interactive documentation.
 python -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
+
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+
 pip install -r requirements.txt
 python api/app.py
 ```
@@ -78,8 +85,10 @@ render.yaml
 
 This configuration installs requirements and runs the API using `gunicorn` on
 Render's free plan.
-
 ### Continuous Deployment
 
 A GitHub Actions workflow (`.github/workflows/render-deploy.yml`) can trigger
 Render deployments on pushes to `main` when configured with your deploy hook.
+
+Render's free plan.
+
