@@ -2,6 +2,13 @@ services:
   - type: web
     name: mostar-api
     env: python
+    region: frankfurt
+    plan: free
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn api.app:app

@@ -11,6 +11,9 @@ available endpoints and exposes interactive documentation.
 ### Setup
 
 ```bash
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
 
 python -m venv venv
 source venv/bin/activate
@@ -38,6 +41,18 @@ GET /demo/climate
 ```
 
 This returns a sample JSON prediction payload.
+
+### Stripe Checkout
+
+Initiate a payment session to purchase API credits:
+
+```
+POST /create-checkout-session
+```
+
+Set `STRIPE_SECRET_KEY` before starting the server to enable this route. The
+landing page defines `purchaseCredits(tier)` which calls this endpoint and
+redirects the browser to the returned Stripe Checkout URL.
 
 ### Landing Page
 
@@ -70,5 +85,10 @@ render.yaml
 
 This configuration installs requirements and runs the API using `gunicorn` on
 Render's free plan.
+### Continuous Deployment
+
+A GitHub Actions workflow (`.github/workflows/render-deploy.yml`) can trigger
+Render deployments on pushes to `main` when configured with your deploy hook.
 
 Render's free plan.
+
