@@ -1,0 +1,13 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Trigger Render Deploy
+        run: curl -X POST https://api.render.com/deploy/srv-xxxxxx?key=YOUR_API_KEY
