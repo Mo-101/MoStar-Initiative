@@ -1,0 +1,6 @@
+Flask
+flasgger
+gunicorn
+stripe
+web3
+python-dotenv

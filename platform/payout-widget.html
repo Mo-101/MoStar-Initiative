@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payout Widget Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.min.js"></script>
+</head>
+<body>
+  <button id="connect">Connect Wallet</button>
+  <button id="withdraw" disabled>Withdraw 0.5 MATIC</button>
+
+  <script type="module">
+  const connectBtn = document.getElementById("connect");
+  const withBtn    = document.getElementById("withdraw");
+  let walletAddr;
+
+  connectBtn.onclick = async () => {
+    if (!window.ethereum) { alert("Install MetaMask"); return; }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const [addr]   = await provider.send("eth_requestAccounts", []);
+    walletAddr     = addr;
+    connectBtn.textContent = "\u2713 Connected";
+    withBtn.disabled = false;
+  };
+
+  withBtn.onclick = async () => {
+    const res = await fetch("https://YOUR-RENDER-URL.onrender.com/payout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: walletAddr, amount: 0.5 })
+    });
+    const { tx_hash } = await res.json();
+    alert("Tx sent: " + tx_hash);
+  };
+  </script>
+</body>
+</html>
