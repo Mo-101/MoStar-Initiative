@@ -1,14 +1,17 @@
 services:
   - type: web
     name: mostar-api
-    env: python
-    region: frankfurt
-    plan: free
+    runtime: python
     rootDir: api
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn payout:app"
     envVars:
-      - key: FLASK_ENV
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn api.app:app
+      - key: WEB3_PROVIDER_URL
+        value: https://polygon-rpc.com
+      - key: VAULT_ADDRESS
+        # This will be set in the Render dashboard
+        value: "0x..."
+      - key: PRIVATE_KEY
+        # This will be set in the Render dashboard as a secret
+        value: "0x..."
+    healthCheckPath: /status
