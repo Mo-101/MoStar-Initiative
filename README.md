@@ -50,10 +50,6 @@ Initiate a payment session to purchase API credits:
 POST /create-checkout-session
 ```
 
-Set `STRIPE_SECRET_KEY` before starting the server to enable this route. The
-landing page defines `purchaseCredits(tier)` which calls this endpoint and
-redirects the browser to the returned Stripe Checkout URL.
-
 ### Landing Page
 
 A minimal Vite site lives under `platform/` and can be used as a landing page
