@@ -131,6 +131,14 @@
             50% { background-position: 100% 50%; }
         }
 
+        #wallet-section {
+            margin-bottom: 20px;
+        }
+
+        #wallet-section p {
+            margin-top: 10px;
+        }
+
         .header p {
             font-size: 1.3em;
             opacity: 0.9;
@@ -140,6 +148,7 @@
 
         .glass-card {
             background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: 20px;
@@ -289,6 +298,7 @@
             color: #fff;
             font-size: 1em;
             transition: all 0.3s ease;
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
 
@@ -585,6 +595,10 @@
 
     <div class="container">
         <div class="header">
+          <section id="wallet-section">
+            <button id="connectWalletBtn" class="btn">🔗 Connect Wallet</button>
+            <p>Connected: <span id="walletAddress">Not connected</span></p>
+          </section>
             <h1>🚀 MoStar Industries</h1>
             <p>Advanced AI Platform • Futuristic Intelligence • Limitless Possibilities</p>
         </div>
@@ -745,8 +759,11 @@
                         <li>Email Support</li>
                         <li>Basic Analytics</li>
                     </ul>
-                    <button class="btn" onclick="purchaseCredits('starter')" style="width: 100%;">
-                        <i class="fas fa-shopping-cart"></i> Purchase
+                    <button class="btn" onclick="purchaseCreditsWithUSDC('starter')" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-coins"></i> Pay with USDC
+                    </button>
+                    <button class="btn btn-secondary pay-with-crypto-btn" data-token="MATIC" onclick="purchaseCreditsWithMATIC('starter')" style="width: 100%;">
+                        <i class="fas fa-wallet"></i> Pay with MATIC
                     </button>
                 </div>
 
@@ -763,8 +780,11 @@
                         <li>Advanced Analytics</li>
                         <li>API Documentation</li>
                     </ul>
-                    <button class="btn" onclick="purchaseCredits('standard')" style="width: 100%;">
-                        <i class="fas fa-crown"></i> Most Popular
+                    <button class="btn" onclick="purchaseCreditsWithUSDC('standard')" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-coins"></i> Pay with USDC
+                    </button>
+                    <button class="btn btn-secondary pay-with-crypto-btn" data-token="MATIC" onclick="purchaseCreditsWithMATIC('standard')" style="width: 100%;">
+                        <i class="fas fa-wallet"></i> Pay with MATIC
                     </button>
                 </div>
 
@@ -783,34 +803,518 @@
                     <button class="btn" onclick="purchaseCredits('pro')" style="width: 100%;">
                         <i class="fas fa-rocket"></i> Upgrade
                     </button>
+                    <button class="btn" onclick="purchaseCreditsWithUSDC('pro')" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-coins"></i> Pay with USDC
+                    </button>
+                    <button class="btn btn-secondary pay-with-crypto-btn" data-token="MATIC" onclick="purchaseCreditsWithMATIC('pro')" style="width: 100%;">
+                        <i class="fas fa-wallet"></i> Pay with MATIC
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        async function purchaseCredits(tier) {
-            try {
-                const res = await fetch('http://localhost:5000/create-checkout-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tier })
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location = data.url;
-                } else {
-                    alert(data.error || 'Checkout failed');
+
+        <div id="walletSection" class="glass-card hidden">
+            <h2 style="color: var(--neon-blue); font-family: 'Orbitron', monospace; margin-bottom: 20px; text-align: center;">
+                <i class="fas fa-wallet"></i> Wallet Connection
+            </h2>
+            <div class="grid">
+                <div>
+                    <h3 style="color: var(--neon-pink); margin-bottom: 15px;">
+                        <i class="fas fa-lock"></i> Secure Wallet Connection
+                    </h3>
+                    <p style="margin-bottom: 20px; opacity: 0.8;">
+                        Connect your wallet to purchase credits and access premium features.
+                    </p>
+                    <button class="btn" id="connectWalletBtn" onclick="connectWallet()" style="width: 100%;">
+                        <i class="fas fa-lock"></i> Connect Wallet
+                    </button>
+                    <div id="walletAddress" style="margin-top: 10px; font-size: 1.2em;"></div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            // API configuration - change to your deployed backend URL
+            const API_BASE_URL = 'http://localhost:5000/api';
+            
+            // Global variables
+            let currentAccount = null;
+            let apiKey = localStorage.getItem('mostar_api_key');
+            let apiCredits = localStorage.getItem('mostar_credits') || 0;
+
+            // Initialize wallet connection on page load
+            window.addEventListener('DOMContentLoaded', async () => {
+                document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
+                
+                // Check for stored API key
+                if (apiKey) {
+                    // Verify if the API key is still valid
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/verify-key`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ apiKey })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.ok) {
+                            apiCredits = data.credits;
+                            localStorage.setItem('mostar_credits', apiCredits);
+                            updateApiKeyDisplay();
+                        } else {
+                            // Invalid API key
+                            localStorage.removeItem('mostar_api_key');
+                            localStorage.removeItem('mostar_credits');
+                            apiKey = null;
+                        }
+                    } catch (error) {
+                        console.error('Error verifying API key:', error);
+                    }
                 }
-            } catch (err) {
-                alert('Checkout failed');
+
+                // Check if wallet was previously connected
+                if (window.ethereum && window.ethereum.selectedAddress) {
+                    currentAccount = window.ethereum.selectedAddress;
+                    updateWalletDisplay();
+                }
+                
+                // Update payment buttons
+                updatePaymentButtons();
+            });
+
+            // Connect to MetaMask wallet
+            async function connectWallet() {
+                if (!window.ethereum) {
+                    alert('MetaMask not detected! Please install MetaMask to use this feature.');
+                    return;
+                }
+                
+                try {
+                    // Request account access
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    currentAccount = accounts[0];
+                    
+                    // Check if we're on Polygon network
+                    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                    if (chainId !== '0x89') { // Polygon Mainnet
+                        await switchToPolygon();
+                    }
+                    
+                    // Update UI
+                    updateWalletDisplay();
+                    updatePaymentButtons();
+                    
+                    // Setup event listener for account changes
+                    window.ethereum.on('accountsChanged', handleAccountsChanged);
+                    window.ethereum.on('chainChanged', handleChainChanged);
+                    
+                } catch (error) {
+                    console.error('Error connecting to wallet:', error);
+                    alert(`Failed to connect wallet: ${error.message}`);
+                }
             }
-        }
-    </script>
-</body>
-</body>
-  <head>
-    <meta charset="UTF-8" />
+            
+            // Switch to Polygon Network
+            async function switchToPolygon() {
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x89' }], // Polygon Mainnet
+                    });
+                } catch (switchError) {
+                    // If the network is not added to MetaMask
+                    if (switchError.code === 4902) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [
+                                    {
+                                        chainId: '0x89',
+                                        chainName: 'Polygon Mainnet',
+                                        nativeCurrency: {
+                                            name: 'MATIC',
+                                            symbol: 'MATIC',
+                                            decimals: 18
+                                        },
+                                        rpcUrls: ['https://polygon-rpc.com'],
+                                        blockExplorerUrls: ['https://polygonscan.com/']
+                                    },
+                                ],
+                            });
+                        } catch (addError) {
+                            console.error('Error adding Polygon network:', addError);
+                            throw addError;
+                        }
+                    } else {
+                        console.error('Error switching to Polygon network:', switchError);
+                        throw switchError;
+                    }
+                }
+            }
+            
+            // Handle account changes
+            function handleAccountsChanged(accounts) {
+                if (accounts.length === 0) {
+                    currentAccount = null;
+                } else if (accounts[0] !== currentAccount) {
+                    currentAccount = accounts[0];
+                }
+                updateWalletDisplay();
+                updatePaymentButtons();
+            }
+            
+            // Handle chain/network changes
+            function handleChainChanged() {
+                // Reload the page when the chain changes
+                window.location.reload();
+            }
+            
+            // Update wallet display
+            function updateWalletDisplay() {
+                const walletAddressElement = document.getElementById('walletAddress');
+                const connectWalletBtn = document.getElementById('connectWalletBtn');
+                
+                if (currentAccount) {
+                    // Format address for display: 0xAbCd...1234
+                    const formattedAddress = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+                    walletAddressElement.textContent = formattedAddress;
+                    walletAddressElement.title = currentAccount; // Full address on hover
+                    
+                    connectWalletBtn.textContent = 'Wallet Connected';
+                    connectWalletBtn.classList.add('btn-secondary');
+                } else {
+                    walletAddressElement.textContent = 'Not connected';
+                    walletAddressElement.title = '';
+                    
+                    connectWalletBtn.textContent = '🔗 Connect Wallet';
+                    connectWalletBtn.classList.remove('btn-secondary');
+                }
+            }
+            
+            // Update API key display
+            function updateApiKeyDisplay() {
+                const apiKeySection = document.getElementById('apiKeySection') || 
+                      createApiKeySection();
+                
+                if (apiKey) {
+                    apiKeySection.innerHTML = `
+                        <h3>Your API Key</h3>
+                        <div class="glass-card" style="margin-top: 15px; padding: 15px;">
+                            <p><strong>API Key:</strong> <span id="apiKeyDisplay">${maskApiKey(apiKey)}</span> 
+                               <button id="showApiKeyBtn" class="btn btn-secondary" style="padding: 5px 10px; margin-left: 10px;">Show</button>
+                               <button id="copyApiKeyBtn" class="btn btn-secondary" style="padding: 5px 10px; margin-left: 10px;">Copy</button>
+                            </p>
+                            <p><strong>Credits Remaining:</strong> <span id="apiCreditsDisplay">${apiCredits}</span></p>
+                        </div>
+                    `;
+                    
+                    // Add event listeners for the API key buttons
+                    document.getElementById('showApiKeyBtn').addEventListener('click', toggleApiKeyVisibility);
+                    document.getElementById('copyApiKeyBtn').addEventListener('click', copyApiKey);
+                } else {
+                    apiKeySection.innerHTML = `
+                        <h3>API Access</h3>
+                        <div class="glass-card" style="margin-top: 15px; padding: 15px;">
+                            <p>Purchase API credits to get your API key and start using the MoStar API.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Create API key section if it doesn't exist
+            function createApiKeySection() {
+                const container = document.querySelector('.container');
+                const creditPurchaseSection = document.getElementById('creditPurchase');
+                
+                const apiKeySection = document.createElement('div');
+                apiKeySection.id = 'apiKeySection';
+                apiKeySection.className = 'glass-card';
+                
+                container.insertBefore(apiKeySection, creditPurchaseSection.nextSibling);
+                return apiKeySection;
+            }
+            
+            // Mask API key for display
+            function maskApiKey(key) {
+                if (!key) return '';
+                return key.substring(0, 4) + '...' + key.substring(key.length - 4);
+            }
+            
+            // Confirm payment and check confirmations
+            async function buyConfirm(txHash, from, plan) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/pay/matic/confirm`, {
+                        method: "POST", 
+                        headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({ txHash, buyer: from, plan })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.status === 202) {
+                        // Not enough confirmations yet, retry in 7 seconds
+                        setTimeout(() => buyConfirm(txHash, from, plan), 7000);
+                        return;
+                    }
+                    
+                    if (!data.ok) {
+                        throw new Error(data.error || 'Payment verification failed');
+                    }
+                    
+                    // Payment successful - update UI
+                    apiKey = data.apiKey;
+                    apiCredits = data.credits;
+                    localStorage.setItem('mostar_api_key', apiKey);
+                    localStorage.setItem('mostar_credits', apiCredits);
+                    
+                    updateApiKeyDisplay();
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                    
+                    alert(`Payment successful! Your API key has been generated.\n\nKey: ${maskApiKey(data.apiKey)}\nCredits: ${data.credits}`);
+                } catch (error) {
+                    console.error('Confirmation error:', error);
+                    alert(`Confirmation error: ${error.message || error}`);
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                }
+            }
+            
+            // Toggle API key visibility
+            function toggleApiKeyVisibility() {
+                const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+                const showBtn = document.getElementById('showApiKeyBtn');
+                
+                if (apiKeyDisplay.textContent === maskApiKey(apiKey)) {
+                    apiKeyDisplay.textContent = apiKey;
+                    showBtn.textContent = 'Hide';
+                } else {
+                    apiKeyDisplay.textContent = maskApiKey(apiKey);
+                    showBtn.textContent = 'Show';
+                }
+            }
+            
+            // Copy API key to clipboard
+            function copyApiKey() {
+                if (!apiKey) return;
+                
+                navigator.clipboard.writeText(apiKey).then(() => {
+                    alert('API Key copied to clipboard!');
+                }).catch(err => {
+                    console.error('Error copying API key:', err);
+                    alert('Failed to copy API key');
+                });
+            }
+            
+            // Update payment buttons based on wallet connection
+            function updatePaymentButtons() {
+                const payButtons = document.querySelectorAll('.pay-with-crypto-btn');
+                payButtons.forEach(btn => {
+                    btn.disabled = !currentAccount;
+                    if (!currentAccount) {
+                        btn.title = 'Connect wallet first';
+                    } else {
+                        btn.title = 'Pay with ' + btn.getAttribute('data-token');
+                    }
+                });
+            }
+
+            // Purchase credits with USDC
+            async function purchaseCreditsWithUSDC(plan) {
+                if (!currentAccount) {
+                    alert('Please connect your wallet first.');
+                    return;
+                }
+                
+                try {
+                    // Get payment details from backend
+                    const initResponse = await fetch(`${API_BASE_URL}/pay/usdc/init`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ plan })
+                    });
+                    
+                    const paymentDetails = await initResponse.json();
+                    if (!paymentDetails.token || !paymentDetails.to) {
+                        throw new Error('Invalid payment details received from server');
+                    }
+                    
+                    // Show processing animation
+                    const character = document.getElementById('authCharacter');
+                    character.classList.add('happy');
+                    
+                    // Create ethers contract instance for USDC
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const signer = provider.getSigner();
+                    
+                    // ERC20 minimal ABI for transfer
+                    const erc20Abi = [
+                        "function transfer(address to, uint256 amount) returns (bool)",
+                        "function balanceOf(address owner) view returns (uint256)",
+                        "function decimals() view returns (uint8)",
+                        "function approve(address spender, uint256 amount) returns (bool)",
+                    ];
+                    
+                    const usdcContract = new ethers.Contract(paymentDetails.token, erc20Abi, signer);
+                    
+                    // Check if user has enough USDC
+                    const balance = await usdcContract.balanceOf(currentAccount);
+                    if (balance.lt(paymentDetails.amount)) {
+                        alert(`Insufficient USDC balance. You need ${paymentDetails.amount} USDC.`);
+                        character.classList.remove('happy');
+                        return;
+                    }
+                    
+                    // Send USDC transaction
+                    const tx = await usdcContract.transfer(
+                        paymentDetails.to, 
+                        paymentDetails.amount
+                    );
+                    
+                    // Wait for transaction confirmation
+                    alert('Please confirm the transaction in your wallet and wait for confirmation...');
+                    const receipt = await tx.wait();
+                    
+                    // Verify payment with backend
+                    const verifyResponse = await fetch(`${API_BASE_URL}/pay/usdc/confirm`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            txHash: receipt.transactionHash,
+                            buyer: currentAccount,
+                            plan: plan
+                        })
+                    });
+                    
+                    const verifyResult = await verifyResponse.json();
+                    if (verifyResult.ok && verifyResult.apiKey) {
+                        // Store API key and credits
+                        apiKey = verifyResult.apiKey;
+                        apiCredits = verifyResult.credits;
+                        localStorage.setItem('mostar_api_key', apiKey);
+                        localStorage.setItem('mostar_credits', apiCredits);
+                        
+                        // Update UI
+                        updateApiKeyDisplay();
+                        
+                        alert(`Payment successful! ${verifyResult.credits} API credits added to your account.`);
+                    } else {
+                        throw new Error(verifyResult.error || 'Payment verification failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    alert(`Payment failed: ${error.message}`);
+                } finally {
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                }
+            }
+            
+            // Purchase credits with MATIC
+            async function purchaseCreditsWithMATIC(plan) {
+                if (!window.ethereum) {
+                    alert('Install MetaMask to continue');
+                    return;
+                }
+                
+                if (!currentAccount) {
+                    alert('Please connect your wallet first.');
+                    return;
+                }
+                
+                try {
+                    // Get payment details from backend
+                    const status = await fetch(`${API_BASE_URL}/status`).then(r => r.json());
+                    const priceWei = BigInt(status.priceWei || "100000000000000000"); // fallback 0.1
+                    const valueHex = '0x' + priceWei.toString(16);
+                    const treasury = status.treasury || "0x17ef75896e3e9dae9e4f354d1fd568262435c11b";
+                    
+                    // Show processing animation
+                    const character = document.getElementById('authCharacter');
+                    character.classList.add('happy');
+                    
+                    // Send MATIC transaction
+                    const txHash = await ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [{ from: currentAccount, to: treasury, value: valueHex }]
+                    });
+                    
+                    // Wait for transaction confirmation
+                    alert('Please confirm the transaction in your wallet and wait for confirmation...');
+                    
+                    // Verify payment with backend
+                    await buyConfirm(txHash, currentAccount, plan);
+                    
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    alert(`Payment error: ${error.message || error}`);
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                }
+            }
+            
+            // Confirm payment and check confirmations
+            async function buyConfirm(txHash, from, plan) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/pay/matic/confirm`, {
+                        method: "POST", 
+                        headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({ txHash, buyer: from, plan })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.status === 202) {
+                        // Not enough confirmations yet, retry in 7 seconds
+                        setTimeout(() => buyConfirm(txHash, from, plan), 7000);
+                        return;
+                    }
+                    
+                    if (!data.ok) {
+                        throw new Error(data.error || 'Payment verification failed');
+                    }
+                    
+                    // Payment successful - update UI
+                    localStorage.setItem('apiKey', data.apiKey);
+                    localStorage.setItem('credits', data.credits);
+                    localStorage.setItem('txHash', data.txHash);
+                    
+                    updateApiKeyDisplay();
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                    
+                    alert(`Payment successful! Your API key has been generated.\n\nKey: ${maskApiKey(data.apiKey)}\nCredits: ${data.credits}`);
+                } catch (error) {
+                    console.error('Confirmation error:', error);
+                    alert(`Confirmation error: ${error.message || error}`);
+                    const character = document.getElementById('authCharacter');
+                    character.classList.remove('happy');
+                }
+            }
+
+            // Legacy function for compatibility - redirects to appropriate payment method
+            async function purchaseCredits(tier) {
+                // Default to USDC for backward compatibility
+                purchaseCreditsWithUSDC(tier);
+            }
+        </script>
+    </body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MoStar Industries</title>
+    </head>
+    <body>
+        <div id="app"></div>
+        <script type="module" src="/src/main.js"></script>
+    </body>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MoStar Industries</title>
   </head>

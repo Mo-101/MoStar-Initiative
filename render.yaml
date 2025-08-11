@@ -7,7 +7,7 @@ services:
     startCommand: "gunicorn payout:app"
     envVars:
       - key: WEB3_PROVIDER_URL
-        value: https://polygon-rpc.com
+        value: https://polygon-pokt.nodies.app
       - key: VAULT_ADDRESS
         # This will be set in the Render dashboard
         value: "0x..."

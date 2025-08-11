@@ -1,4 +1,9 @@
 Flask
+Flask-SQLAlchemy
+psycopg2-binary
+web3
+python-dotenv
+gunicorn
 flasgger
 gunicorn
 stripe

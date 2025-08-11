@@ -1,0 +1,7 @@
+Flask
+flask-cors
+web3
+psycopg2-binary
+gunicorn
+eth-abi
+pyjwt
