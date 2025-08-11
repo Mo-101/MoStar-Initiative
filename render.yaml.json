@@ -1,0 +1,18 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "mostar-api",
+      "runtime": "python",
+      "rootDir": "api",
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "gunicorn payout:app",
+      "envVars": [
+        { "key": "WEB3_PROVIDER_URL", "value": "https://mostar-initiative.onrender.com" },
+        { "key": "VAULT_ADDRESS", "value": "0x17ef75896e3e9dae9e4f354d1fd568262435c11b" },
+        { "key": "PRIVATE_KEY", "value": "0x46cf5745a7f0f0492615497bc8bcc7af6d477a1eb1d27e6600b817ebc125393d" }
+      ],
+      "healthCheckPath": "/status"
+    }
+  ]
+}

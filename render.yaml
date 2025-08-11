@@ -7,11 +7,13 @@ services:
     startCommand: "gunicorn payout:app"
     envVars:
       - key: WEB3_PROVIDER_URL
-        value: https://polygon-pokt.nodies.app
+        value: https://mostar-initiative.onrender.com
       - key: VAULT_ADDRESS
         # This will be set in the Render dashboard
-        value: "0x..."
+
+        value: "0x17ef75896e3e9dae9e4f354d1fd568262435c11b"
       - key: PRIVATE_KEY
         # This will be set in the Render dashboard as a secret
-        value: "0x..."
+
+        value: "0x46cf5745a7f0f0492615497bc8bcc7af6d477a1eb1d27e6600b817ebc125393d"
     healthCheckPath: /status
